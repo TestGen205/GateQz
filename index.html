@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>논리 게이트 게임</title>
+<style>
+:root{color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eff1f5;--card:#fff;--text:#4c4f69;--muted:#6c6f85;--accent:#8839ef;--btn:#1e66f5;--wire:#7287fd;--in1:#40a02b;--bad:#d20f39;--panel:#e6e9ef;--line:#bcc0cc;--on:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1e1e2e;--card:#252538;--text:#cdd6f4;--muted:#a6adc8;--accent:#cba6f7;--btn:#89b4fa;--wire:#89b4fa;--in1:#a6e3a1;--bad:#f38ba8;--panel:#11111b;--line:#45475a;--on:#11111b}}
+:root[data-theme="dark"]{--bg:#1e1e2e;--card:#252538;--text:#cdd6f4;--muted:#a6adc8;--accent:#cba6f7;--btn:#89b4fa;--wire:#89b4fa;--in1:#a6e3a1;--bad:#f38ba8;--panel:#11111b;--line:#45475a;--on:#11111b}
+*{box-sizing:border-box}
+body{margin:0;padding:12px;font-family:system-ui,-apple-system,'Apple SD Gothic Neo','Noto Sans KR','Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;justify-content:center;align-items:center;-webkit-tap-highlight-color:transparent}
+.game{width:100%;max-width:640px;background:var(--card);border-radius:18px;padding:22px 16px;box-shadow:0 10px 30px rgba(0,0,0,.2);text-align:center}
+.screen{display:none}.screen.on{display:block}
+h2{color:var(--accent);margin:.2em 0 .5em;font-size:1.35rem}
+p{line-height:1.5}
+.gcard{display:flex;gap:14px;align-items:center;text-align:left;background:var(--panel);border-radius:12px;padding:10px 12px;margin:8px 0;font-size:.95rem}
+.ico{width:64px;height:56px;flex:none;color:var(--accent);background:var(--card);border-radius:8px}
+.hl{color:var(--in1);font-weight:700}.hb{color:var(--bad);font-weight:700}
+.btn{background:linear-gradient(135deg,var(--btn),var(--accent));color:var(--on);border:0;padding:14px 28px;font-size:1.05rem;font-weight:700;border-radius:12px;cursor:pointer;margin:8px 4px;font-family:inherit}
+.btn:active{transform:scale(.97)}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:.9rem;cursor:pointer;margin-top:10px;font-family:inherit}
+.lv{display:block;width:100%;text-align:left;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:14px 16px;margin:10px 0;cursor:pointer;color:var(--text);font-family:inherit}
+.lv:hover,.lv:active{border-color:var(--accent)}
+.lv b{font-size:1.15rem}.lv span{display:block;color:var(--muted);font-size:.9rem;margin-top:4px}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:.9rem;color:var(--muted)}
+.badge{background:var(--accent);color:var(--on);padding:2px 12px;border-radius:99px;font-weight:700}
+.bar{height:6px;background:var(--panel);border-radius:9px;margin:8px 0 14px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--btn),var(--accent));transition:width .3s}
+.ask{font-size:1.1rem;font-weight:700;margin:6px 0 12px}
+.ask b{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--in1);color:var(--on);margin:0 4px;vertical-align:middle}
+.ask b.z{background:var(--muted)}
+.stage{background:var(--panel);border-radius:14px;padding:14px 6px}
+.stage svg{width:100%;max-width:460px;height:auto;display:block;margin:auto}
+.stage.shake{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pulse{animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.pulse,.stage.shake{animation:none}}
+.dropzone{cursor:pointer}
+.dropzone.hover rect{stroke:var(--in1);stroke-width:4}
+.armed .dropzone rect{stroke-width:4}
+.fb{min-height:26px;font-weight:700;margin-top:10px}
+.hint{font-size:.8rem;color:var(--muted);min-height:18px}
+.opts{display:flex;justify-content:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.opt{background:var(--btn);color:var(--on);border-radius:12px;padding:10px 6px;font-weight:700;width:84px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;box-shadow:0 3px 8px rgba(0,0,0,.2)}
+.opt svg{width:54px;height:48px}
+.opt.sel{outline:4px solid var(--in1);transform:translateY(-4px)}
+.ghost{position:fixed;z-index:99;pointer-events:none;transform:translate(-50%,-50%) scale(1.1);opacity:.9}
+.tip{font-size:.8rem;color:var(--muted);margin:14px 0 0}
+</style>
+</head>
+<body>
+<div class="game">
+  <div id="s-intro" class="screen on">
+    <h2>🧐 논리 게이트 학습하기</h2>
+    <p>문제를 풀기 전에 게이트의 기호와 규칙을 기억하세요.</p>
+    <div id="gate-cards"></div>
+    <button class="btn" onclick="show('s-level')">난이도 선택하기 🚀</button>
+  </div>
+
+  <div id="s-level" class="screen">
+    <h2>난이도를 고르세요</h2>
+    <button class="lv" onclick="startLevel('easy')"><b>🌱 쉬움</b><span>게이트 1개 · AND, OR, NOT · 5문제</span></button>
+    <button class="lv" onclick="startLevel('normal')"><b>🔥 보통</b><span>게이트 2개 연결 · NOR 추가 · 5문제</span></button>
+    <button class="lv" onclick="startLevel('hard')"><b>⚡ 어려움</b><span>게이트 3개 조합 · 입력 3~4개 · 6문제</span></button>
+    <button class="link" onclick="show('s-intro')">← 게이트 다시 보기</button>
+  </div>
+
+  <div id="s-quiz" class="screen">
+    <div class="top"><span class="badge" id="lv-badge"></span><span id="step"></span></div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="ask" id="ask"></div>
+    <div class="stage" id="stage"></div>
+    <div class="fb" id="fb"></div>
+    <div class="hint" id="hint"></div>
+    <div class="opts" id="opts"></div>
+    <p class="tip">💡 게이트를 끌어다 놓거나, 게이트를 누른 뒤 빈칸을 눌러도 돼요. 채운 칸을 누르면 비워져요.</p>
+    <button class="link" onclick="show('s-level')">← 난이도 바꾸기</button>
+  </div>
+
+  <div id="s-result" class="screen">
+    <h2>🎉 통과했어요!</h2>
+    <p id="res-text"></p>
+    <button class="btn" onclick="startLevel(lvKey)">같은 난이도 다시</button>
+    <button class="btn" onclick="show('s-level')">난이도 선택</button>
+  </div>
+</div>
+
+<script>
+const ST='stroke-width="3" stroke-linecap="round" stroke-linejoin="round"';
+function buildGate(g,w,h,ar,c){
+  const m=h/2,yT=h*.2,yB=h*.8,S=`stroke="${c}" ${ST}`;
+  if(g==='NOT'){const tip=w*.68,r=w*.07;
+    return `<polygon points="0,${m-h*.38} 0,${m+h*.38} ${tip},${m}" fill="none" ${S}/><circle cx="${tip+r}" cy="${m}" r="${r}" fill="var(--card)" ${S}/><line x1="${tip+2*r}" y1="${m}" x2="${w}" y2="${m}" ${S}/>`;}
+  if(g==='AND'){const mx=w*.4,rx=w*.36,ry=(yB-yT)/2;
+    return `<path d="M0,${yT} L${mx},${yT} A${rx},${ry} 0 0 1 ${mx},${yB} L0,${yB} Z" fill="none" ${S}/><line x1="${mx+rx}" y1="${m}" x2="${w}" y2="${m}" ${S}/>`;}
+  const cu=w*.16,bx=w*.76,nor=g==='NOR',br=nor?Math.max(w*.06,3):0,ls=bx+br*2;
+  const d=`M${cu},${yT} C${w*.34},${yT+(m-yT)*.35} ${w*.34},${yB-(yB-m)*.35} ${cu},${yB} C${w*.46},${yB} ${w*.62},${yB-(yB-m)*.55} ${bx},${m} C${w*.62},${yT+(m-yT)*.55} ${w*.46},${yT} ${cu},${yT} Z`;
+  return `<path d="${d}" fill="none" ${S}/>`+(nor?`<circle cx="${bx+br}" cy="${m}" r="${br}" fill="none" ${S}/>`:'')+
+    `<line x1="0" y1="${yT}" x2="${cu}" y2="${yT}" ${S}/><line x1="0" y1="${yB}" x2="${cu}" y2="${yB}" ${S}/><line x1="${ls}" y1="${m}" x2="${w}" y2="${m}" ${S}/>`+
+    (ar===1?`<line x1="0" y1="${yT}" x2="0" y2="${yB}" ${S}/>`:'');
+}
+const icon=(g,cls)=>`<svg class="${cls}" viewBox="-4 -4 74 68">${buildGate(g,66,60,2,'currentColor')}</svg>`;
+const GATES=[
+ ['AND','두 입력이 <span class="hl">모두 1일 때만</span> 결과가 1이 됩니다.'],
+ ['OR','두 입력 중 <span class="hl">하나라도 1이면</span> 결과가 1이 됩니다.'],
+ ['NOT','입력을 <span class="hb">반대로</span> 뒤집습니다. (1은 0으로, 0은 1로)'],
+ ['NOR','OR의 <span class="hb">반대</span>입니다. 두 입력이 모두 0일 때만 1이 됩니다.']];
+document.getElementById('gate-cards').innerHTML=GATES.map(([g,t])=>`<div class="gcard">${icon(g,'ico')}<div><strong>${g} 게이트</strong><br>${t}</div></div>`).join('');
+
+// ---- 논리 ----
+const fn=(g,a,b)=>g==='AND'?(a&b):g==='OR'?(a|b):g==='NOR'?((a|b)^1):(a^1);
+// 한 입력 칸에 2입력 게이트를 넣으면 같은 신호가 두 입력 모두로 들어갑니다 (예: NOR(x,x)=NOT x)
+const TPL={
+ T1:{H:140,in:[['A',40,47],['B',40,83]],slots:[{x:150,y:35,src:['i0','i1']}],out:[340,65]},
+ T2:{H:140,in:[['A',40,65]],slots:[{x:150,y:35,src:['i0']}],out:[340,65]},
+ T3:{H:140,in:[['A',40,47],['B',40,83]],slots:[{x:110,y:35,src:['i0','i1']},{x:230,y:35,src:['s0']}],out:[372,65]},
+ T4:{H:135,in:[['A',40,30],['B',40,66],['C',40,102]],slots:[{x:110,y:18,src:['i0','i1']},{x:240,y:54,src:['s0','i2']}],out:[372,84]},
+ T5:{H:185,in:[['A',40,22],['B',40,58],['C',40,140]],slots:[{x:100,y:10,src:['i0','i1']},{x:100,y:110,src:['i2']},{x:240,y:60,src:['s0','s1']}],out:[372,90]},
+ T6:{H:185,in:[['A',40,22],['B',40,58],['C',40,122],['D',40,158]],slots:[{x:100,y:10,src:['i0','i1']},{x:100,y:110,src:['i2','i3']},{x:240,y:60,src:['s0','s1']}],out:[372,90]}};
+const LEVELS={
+ easy:{name:'🌱 쉬움',n:5,tpls:['T1','T2'],pool:['AND','OR','NOT'],max:2},
+ normal:{name:'🔥 보통',n:5,tpls:['T3','T4'],pool:['AND','OR','NOT','NOR'],max:4},
+ hard:{name:'⚡ 어려움',n:6,tpls:['T5','T6'],pool:['AND','OR','NOT','NOR'],max:6}};
+
+function evalQ(t,ins,gs){
+  const v={};ins.forEach((x,i)=>v['i'+i]=x);
+  TPL[t].slots.forEach((s,k)=>{const a=v[s.src[0]],b=s.src.length>1?v[s.src[1]]:a;v['s'+k]=fn(gs[k],a,b);});
+  return v['s'+(TPL[t].slots.length-1)];
+}
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const combos=ls=>ls.reduce((acc,l)=>acc.flatMap(a=>l.map(x=>[...a,x])),[[]]);
+function makeQ(L,seen){
+  let q;
+  for(let tr=0;tr<200;tr++){
+    const t=rnd(L.tpls),T=TPL[t];
+    const lists=T.slots.map(s=>L.pool.filter(g=>g!=='NOT'||s.src.length===1));
+    const ins=T.in.map(()=>Math.random()<.5?1:0);
+    const hidden=lists.map(rnd),out=evalQ(t,ins,hidden);
+    const sols=combos(lists).filter(c=>evalQ(t,ins,c)===out).length;
+    q={t,ins,out,sols,pool:[...new Set(lists.flat())]};
+    const sig=t+ins.join('')+out;
+    if(sols<=(t==='T2'?1:L.max)&&!seen.has(sig)){seen.add(sig);return q;}
+  }
+  return q;
+}
+
+// ---- 렌더링 ----
+function badge(l,v,x,y){
+  return `<rect x="${x-26}" y="${y-14}" width="52" height="28" rx="8" fill="${v?'var(--in1)':'var(--card)'}" stroke="${v?'var(--in1)':'var(--line)'}" stroke-width="2"/><text x="${x}" y="${y+6}" text-anchor="middle" font-size="15" font-weight="700" fill="${v?'var(--on)':'var(--muted)'}">${l} ${v}</text>`;
+}
+function wire(a,b){const xm=(a[0]+b[0])/2;return `<path d="M${a[0]} ${a[1]}H${xm}V${b[1]}H${b[0]}" fill="none" stroke="var(--wire)" stroke-width="3" stroke-linejoin="round"/>`;}
+function renderCircuit(q){
+  const T=TPL[q.t],pt={};let s=`<svg viewBox="0 0 420 ${T.H}" role="img" aria-label="논리 회로">`;
+  T.in.forEach(([l,x,y],i)=>pt['i'+i]=[x+26,y]);
+  T.slots.forEach((sl,k)=>pt['s'+k]=[sl.x+66,sl.y+30]);
+  T.slots.forEach(sl=>sl.src.forEach((r,k)=>{const ar=sl.src.length;s+=wire(pt[r],[sl.x,sl.y+(ar===1?30:(k?48:12))]);}));
+  const [ox,oy]=T.out;
+  s+=wire(pt['s'+(T.slots.length-1)],[ox-21,oy]);
+  T.in.forEach(([l,x,y],i)=>s+=badge(l,q.ins[i],x,y));
+  T.slots.forEach((sl,k)=>s+=`<g class="dropzone" data-i="${k}" data-ar="${sl.src.length}" transform="translate(${sl.x},${sl.y})"><rect width="66" height="60" rx="8"/></g>`);
+  s+=`<circle cx="${ox}" cy="${oy}" r="21" fill="${q.out?'var(--in1)':'var(--card)'}" stroke="var(--accent)" stroke-width="3"/><text x="${ox}" y="${oy+8}" text-anchor="middle" font-size="22" font-weight="700" fill="${q.out?'var(--on)':'var(--muted)'}">${q.out}</text><text x="${ox}" y="${oy+42}" text-anchor="middle" font-size="12" fill="var(--muted)">결과</text></svg>`;
+  return s;
+}
+function drawSlot(dz,gate,state){
+  const r=dz.querySelector('rect');dz.querySelectorAll('.dz').forEach(e=>e.remove());
+  if(!gate){
+    r.setAttribute('class','pulse');r.setAttribute('stroke','var(--accent)');r.setAttribute('stroke-dasharray','5');r.setAttribute('fill','var(--card)');r.setAttribute('fill-opacity','1');r.setAttribute('stroke-width','3');
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('class','dz');t.setAttribute('x',33);t.setAttribute('y',39);t.setAttribute('font-size',24);t.setAttribute('font-weight','700');t.setAttribute('fill','var(--accent)');t.setAttribute('text-anchor','middle');t.style.pointerEvents='none';t.textContent='?';
+    dz.appendChild(t);return;
+  }
+  const ok=state==='ok';
+  r.removeAttribute('class');r.removeAttribute('stroke-dasharray');r.setAttribute('stroke','none');
+  r.setAttribute('fill',ok?'var(--in1)':'var(--accent)');r.setAttribute('fill-opacity','.14');
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('class','dz');g.style.pointerEvents='none';
+  g.innerHTML=buildGate(gate,66,60,+dz.dataset.ar,ok?'var(--in1)':'var(--accent)');
+  dz.appendChild(g);
+}
+
+// ---- 게임 흐름 ----
+let lvKey='easy',Q=[],qi=0,placed=[],sel=null,locked=false;
+const $=id=>document.getElementById(id);
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');}
+function startLevel(k){
+  lvKey=k;const L=LEVELS[k],seen=new Set();
+  Q=Array.from({length:L.n},()=>makeQ(L,seen));qi=0;show('s-quiz');load();
+}
+function load(){
+  const q=Q[qi],L=LEVELS[lvKey],T=TPL[q.t];
+  $('lv-badge').textContent=L.name;$('step').textContent=`${qi+1} / ${Q.length}`;$('bar').style.width=(qi/Q.length*100)+'%';
+  $('ask').innerHTML=`빈칸을 채워서 결과를 <b class="${q.out?'':'z'}">${q.out}</b> 으로 만드세요`;
+  $('stage').innerHTML=renderCircuit(q);
+  $('stage').querySelectorAll('.dropzone').forEach(d=>drawSlot(d,null));
+  placed=new Array(T.slots.length).fill(null);locked=false;sel=null;$('stage').classList.remove('armed');
+  $('fb').textContent='';updHint();renderOpts(q);
+}
+function updHint(){const n=placed.length;$('hint').textContent=n>1?`${placed.filter(Boolean).length} / ${n} 칸 채움`:'';}
+function renderOpts(q){
+  const box=$('opts');box.innerHTML='';
+  [...q.pool].sort(()=>Math.random()-.5).forEach(g=>{
+    const it=document.createElement('div');it.className='opt';it.dataset.g=g;
+    it.innerHTML=`${icon(g,'')}<span>${g}</span>`;bindDrag(it,g);box.appendChild(it);
+  });
+}
+const dzAt=(x,y)=>{const e=document.elementFromPoint(x,y);return e&&e.closest?e.closest('.dropzone'):null;};
+function hover(dz){document.querySelectorAll('.dropzone.hover').forEach(d=>d.classList.remove('hover'));if(dz)dz.classList.add('hover');}
+function bindDrag(it,g){
+  it.addEventListener('pointerdown',e=>{
+    if(locked)return;
+    const sx=e.clientX,sy=e.clientY;let ghost=null,moved=false;
+    try{it.setPointerCapture(e.pointerId);}catch(_){}
+    const end=()=>{it.removeEventListener('pointermove',mv);it.removeEventListener('pointerup',up);it.removeEventListener('pointercancel',cn);if(ghost)ghost.remove();hover(null);};
+    const mv=ev=>{
+      if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){moved=true;ghost=it.cloneNode(true);ghost.className='opt ghost';document.body.appendChild(ghost);}
+      if(moved){ghost.style.left=ev.clientX+'px';ghost.style.top=ev.clientY+'px';hover(dzAt(ev.clientX,ev.clientY));}
+    };
+    const up=ev=>{
+      const dz=moved?dzAt(ev.clientX,ev.clientY):null;end();
+      if(moved){if(dz)place(+dz.dataset.i,g);}
+      else{const was=sel===g;clearSel();if(!was){sel=g;it.classList.add('sel');$('stage').classList.add('armed');}}
+    };
+    const cn=()=>end();
+    it.addEventListener('pointermove',mv);it.addEventListener('pointerup',up);it.addEventListener('pointercancel',cn);
+  });
+}
+function clearSel(){sel=null;document.querySelectorAll('.opt.sel').forEach(o=>o.classList.remove('sel'));$('stage').classList.remove('armed');}
+$('stage').addEventListener('click',e=>{
+  const dz=e.target.closest&&e.target.closest('.dropzone');if(!dz||locked)return;
+  const i=+dz.dataset.i;
+  if(sel){place(i,sel);clearSel();}
+  else if(placed[i]){placed[i]=null;drawSlot(dz,null);updHint();}
+});
+function place(i,g){
+  if(locked)return;
+  const dz=$('stage').querySelector(`.dropzone[data-i="${i}"]`),fb=$('fb');
+  if(g==='NOT'&&+dz.dataset.ar===2){fb.style.color='var(--bad)';fb.textContent='NOT은 입력이 1개인 칸에만 넣을 수 있어요.';return;}
+  fb.textContent='';placed[i]=g;drawSlot(dz,g,'p');updHint();
+  if(placed.every(Boolean))check();
+}
+function check(){
+  const q=Q[qi],stage=$('stage'),fb=$('fb');locked=true;
+  const dzs=[...stage.querySelectorAll('.dropzone')];
+  if(evalQ(q.t,q.ins,placed)===q.out){   // 결과값이 맞으면 어떤 조합이든 정답
+    dzs.forEach((d,i)=>drawSlot(d,placed[i],'ok'));
+    fb.style.color='var(--in1)';fb.textContent='✅ 정답입니다!'+(q.sols>1?' (정답이 여러 개인 문제였어요)':'');
+    setTimeout(()=>{qi++;if(qi<Q.length)load();else{$('res-text').textContent=`${LEVELS[lvKey].name} 난이도의 모든 문제를 해결했어요.`;show('s-result');}},1000);
+  }else{
+    stage.classList.add('shake');fb.style.color='var(--bad)';fb.textContent='❌ 결과가 맞지 않아요. 다시 시도해보세요!';
+    setTimeout(()=>{stage.classList.remove('shake');dzs.forEach(d=>drawSlot(d,null));placed=new Array(placed.length).fill(null);fb.textContent='';updHint();locked=false;},900);
+  }
+}
+</script>
+</body>
+</html>
